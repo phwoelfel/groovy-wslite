@@ -1,4 +1,4 @@
-/* Copyright 2011 the original author or authors.
+/* Copyright 2011-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,9 +81,17 @@ class ContentBuilder {
     }
 
     void multipart(String name, byte[] content) {
+        multipart(name, content, null, null)
+    }
+
+    void multipart(String name, byte[] content, String contentType) {
+        multipart(name, content, contentType, null)
+    }
+
+    void multipart(String name, byte[] content, String contentType, String filename) {
         dataContentType = ContentType.MULTIPART
         multipartData = multipartData ?: []
-        multipartData << new BodyPart(name: name, content: content)
+        multipartData << new BodyPart(name: name, content: content, contentType: contentType, filename: filename)
     }
 
     void xml(Closure content) {
@@ -146,6 +154,17 @@ class ContentBuilder {
             baos <<  boundary.bytes
             baos <<  LINE_SEPARATOR
             baos <<  "Content-Disposition: form-data; name=\"${part.name}\"".toString().bytes
+            if (part.filename) {
+                baos << "; filename=\"${part.filename}\"".toString().bytes
+                if (!part.contentType) {
+                    baos <<  LINE_SEPARATOR
+                    baos <<  "Content-Type: application/octet-stream".toString().bytes
+                }
+            }
+            if (part.contentType) {
+                baos << LINE_SEPARATOR
+                baos << "Content-Type: ${part.contentType}".toString().bytes
+            }
             baos <<  LINE_SEPARATOR
             baos <<  LINE_SEPARATOR
             baos <<  part.content
