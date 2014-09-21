@@ -18,6 +18,7 @@ import groovy.xml.*
 import groovy.json.*
 import wslite.http.*
 import wslite.rest.multipart.BodyPart
+import wslite.rest.multipart.FileBodyPart
 
 class ContentBuilder {
 
@@ -85,6 +86,12 @@ class ContentBuilder {
         multipartData = multipartData ?: []
         multipartData << new BodyPart(name: name, content: content)
     }
+    
+    void multipart(String name, File file) {
+        dataContentType = ContentType.MULTIPART
+        multipartData = multipartData ?: []
+        multipartData << new FileBodyPart(name, file)
+    }
 
     void xml(Closure content) {
         dataContentType = ContentType.XML
@@ -145,7 +152,14 @@ class ContentBuilder {
             baos <<  BOUNDARY_PREFIX
             baos <<  boundary.bytes
             baos <<  LINE_SEPARATOR
-            baos <<  "Content-Disposition: form-data; name=\"${part.name}\"".toString().bytes
+            if(part instanceof FileBodyPart){
+            	baos << "Content-Disposition: form-data; name=\"${part.name}\"; filename=\"${part.fileName}\"".toString().bytes	
+            	baos <<  LINE_SEPARATOR
+            	baos << "Content-Type: application/octet-stream".toString().bytes	
+            }
+            else{
+            	baos <<  "Content-Disposition: form-data; name=\"${part.name}\"".toString().bytes
+            }
             baos <<  LINE_SEPARATOR
             baos <<  LINE_SEPARATOR
             baos <<  part.content
