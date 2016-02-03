@@ -16,6 +16,7 @@ package wslite.http
 
 import wslite.http.auth.*
 
+import java.net.Proxy;
 import java.util.zip.GZIPInputStream
 
 class HTTPClient {
@@ -43,6 +44,14 @@ class HTTPClient {
          this.httpConnectionFactory = httpConnectionFactory
     }
 
+	public def setSecurityProtocol(String securityProtocol){
+		httpConnectionFactory.securityProtocol = securityProtocol;
+	}
+	
+	public def getSecurityProtocol(){
+		return httpConnectionFactory.securityProtocol
+	}
+	
     HTTPResponse execute(HTTPRequest request) {
         if (!(request?.url && request?.method)) {
             throw new IllegalArgumentException('HTTP Request must contain a url and method')
@@ -86,6 +95,7 @@ class HTTPClient {
                 return httpConnectionFactory.getConnectionUsingTrustStore(request.url,
                         trustStoreFile, trustStorePassword, usedProxy)
             }
+			return httpConnectionFactory.getSecureConnection(request.url, usedProxy) 
         }
         return httpConnectionFactory.getConnection(request.url, getProxy(request, false))
     }

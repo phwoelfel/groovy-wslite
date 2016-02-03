@@ -15,11 +15,28 @@
 package wslite.http
 
 import javax.net.ssl.*
+
+import java.net.Proxy;
 import java.security.KeyStore
 import java.security.SecureRandom
 
 class HTTPConnectionFactory {
 
+	/**
+	 * Which protocol to use for secure connections (e.g.: SSL, TLSv1, TLSv1.2, ...). Default TLSv1
+	 */
+	String securityProtocol = "TLSv1"
+	
+	def getSecureConnection(URL url, Proxy proxy=Proxy.NO_PROXY) {		
+		SSLContext sc = SSLContext.getInstance(securityProtocol)
+		sc.init(null, null, null) // use default
+
+		HttpsURLConnection httpsCon = (HttpsURLConnection) url.openConnection()
+		httpsCon.setSSLSocketFactory(sc.getSocketFactory())
+		
+		return httpsCon
+	}
+	
     def getConnection(URL url, Proxy proxy=Proxy.NO_PROXY) {
         return url.openConnection(proxy)
     }
@@ -30,7 +47,7 @@ class HTTPConnectionFactory {
                 checkClientTrusted: { arg0, arg1 -> },
                 checkServerTrusted: {arg0, arg1 -> }
         ] as X509TrustManager
-        SSLContext sc = SSLContext.getInstance('SSL')
+        SSLContext sc = SSLContext.getInstance(securityProtocol)
         sc.init(null, [trustingTrustManager] as TrustManager[], null)
         def conn = getConnection(url, proxy)
         conn.setSSLSocketFactory(sc.getSocketFactory())
@@ -52,7 +69,7 @@ class HTTPConnectionFactory {
         def tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
         tmf.init(keyStore)
 
-        def sc = SSLContext.getInstance('SSL')
+        def sc = SSLContext.getInstance(securityProtocol)
         sc.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom())
 
         def conn = getConnection(url, proxy)
